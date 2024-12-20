@@ -1,19 +1,12 @@
-"use client";
-
-import { FilePicker } from "./components/file-picker/file-picker";
-import { SWRConfig } from "swr";
+import { SWRProvider } from "./providers/swr-provider";
+import { AuthProvider } from "./components/auth/auth-provider";
 
 export default function Home() {
   return (
     <div className="container mx-auto py-8">
-      <SWRConfig
-        value={{
-          revalidateOnFocus: false,
-          shouldRetryOnError: false,
-        }}
-      >
-        <FilePicker />
-      </SWRConfig>
+      <SWRProvider>
+        <AuthProvider />
+      </SWRProvider>
     </div>
   );
 }
