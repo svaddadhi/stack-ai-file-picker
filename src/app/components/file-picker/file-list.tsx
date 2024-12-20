@@ -5,7 +5,7 @@ interface FileListProps {
   files: FileItemType[];
   selectedFiles: string[];
   onFileSelect: (fileId: string) => void;
-  onFolderOpen: (folderId: string) => void;
+  onFolderOpen: (resourceId: string, path: string) => void;
 }
 
 export function FileList({
@@ -37,7 +37,7 @@ export function FileList({
           onSelect={() => onFileSelect(file.resource_id)}
           onOpen={
             file.inode_type === "directory"
-              ? () => onFolderOpen(file.resource_id)
+              ? () => onFolderOpen(file.resource_id, file.inode_path.path)
               : undefined
           }
           onIndex={() => console.log("Index:", file.resource_id)}

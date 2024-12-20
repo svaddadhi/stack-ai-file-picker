@@ -7,7 +7,7 @@ interface FileExplorerProps {
   files: FileItem[];
   selectedFiles: string[];
   onFileSelect: (fileId: string) => void;
-  onFolderOpen: (folderId: string) => void;
+  onFolderOpen: (resourceId: string, path: string) => void;
   isLoading: boolean;
   error?: string;
 }

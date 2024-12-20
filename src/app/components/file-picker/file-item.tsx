@@ -33,12 +33,20 @@ export const FileItem = memo(function FileItem({
 }: FileItemProps) {
   const Icon = type === "directory" ? FolderIcon : FileIcon;
 
+  // Handle double click with proper event type
+  const handleDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (onOpen) {
+      e.preventDefault();
+      onOpen();
+    }
+  };
+
   return (
     <div
       className={`flex items-center p-2 rounded-lg gap-3 hover:bg-gray-100 dark:hover:bg-gray-800 ${
         isSelected ? "bg-gray-50 dark:bg-gray-900" : ""
       }`}
-      onDoubleClick={onOpen}
+      onDoubleClick={handleDoubleClick}
     >
       <Checkbox checked={isSelected} onCheckedChange={() => onSelect()} />
       <Icon className="h-4 w-4 text-gray-500" />
