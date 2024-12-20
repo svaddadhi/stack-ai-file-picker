@@ -5,6 +5,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { FileExplorer } from "./file-explorer";
 import { BreadcrumbNavigation } from "./breadcrumb-navigation";
 import { ErrorBoundary } from "../shared/error-boundary";
+import { Toolbar } from "./toolbar";
+import { useSortFilter } from "@/app/hooks/ui/use-sort-filter";
 import { useConnection } from "@/app/hooks/api/use-connection";
 import { useResources } from "@/app/hooks/api/use-resources";
 import { useNavigation } from "@/app/hooks/ui/use-navigation";
@@ -23,6 +25,16 @@ export function FilePicker() {
     canGoBack,
     canGoForward,
   } = useNavigation();
+
+  const {
+    searchTerm,
+    setSearchTerm,
+    sortType,
+    setSortType,
+    sortDirection,
+    toggleSortDirection,
+    processFiles,
+  } = useSortFilter();
 
   const { resources, isLoading, error } = useResources({
     connectionId: connection?.connection_id || "",
@@ -107,8 +119,16 @@ export function FilePicker() {
 
       <ErrorBoundary>
         <div className="p-4">
+          <Toolbar
+            searchTerm={searchTerm}
+            onSearch={setSearchTerm}
+            sortType={sortType}
+            onSort={setSortType}
+            sortDirection={sortDirection}
+            onDirectionChange={toggleSortDirection}
+          />
           <FileExplorer
-            files={resources}
+            files={processFiles(resources)}
             selectedFiles={selectedFiles}
             onFileSelect={handleFileSelect}
             onFolderOpen={(resourceId, path) =>
