@@ -2,6 +2,7 @@ import { memo } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { FileIcon, FolderIcon } from "lucide-react";
+import { StatusIndicator } from "./status-indicator";
 
 interface FileItemProps {
   id: string;
@@ -10,12 +11,13 @@ interface FileItemProps {
   path: string;
   isSelected: boolean;
   isIndexed: boolean;
+  isPending?: boolean;
   metadata?: {
     size?: number;
     modifiedDate?: string;
     type?: string;
   };
-  onSelect: () => void;
+  onSelect: (e: React.MouseEvent) => void;
   onOpen?: () => void;
   onIndex: () => void;
   onDeindex: () => void;
@@ -26,6 +28,7 @@ export const FileItem = memo(function FileItem({
   type,
   isSelected,
   isIndexed,
+  isPending,
   onSelect,
   onOpen,
   onDeindex,
@@ -33,12 +36,16 @@ export const FileItem = memo(function FileItem({
 }: FileItemProps) {
   const Icon = type === "directory" ? FolderIcon : FileIcon;
 
-  // Handle double click with proper event type
   const handleDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (onOpen) {
       e.preventDefault();
       onOpen();
     }
+  };
+
+  const handleSelect = (e: React.MouseEvent) => {
+    e.preventDefault();
+    onSelect(e);
   };
 
   return (
@@ -48,17 +55,40 @@ export const FileItem = memo(function FileItem({
       }`}
       onDoubleClick={handleDoubleClick}
     >
-      <Checkbox checked={isSelected} onCheckedChange={() => onSelect()} />
+      <Checkbox
+        checked={isSelected}
+        onCheckedChange={() => {
+          const syntheticEvent = new MouseEvent("click", {
+            bubbles: true,
+            cancelable: true,
+            buttons: 1,
+          });
+          onSelect(syntheticEvent as unknown as React.MouseEvent);
+        }}
+      />
       <Icon className="h-4 w-4 text-gray-500" />
-      <span className="flex-grow truncate">{name}</span>
+      <span
+        className="flex-grow truncate cursor-pointer"
+        onClick={handleSelect}
+      >
+        {name}
+      </span>
       {type === "file" && (
-        <Button
-          variant={isIndexed ? "outline" : "secondary"}
-          size="sm"
-          onClick={isIndexed ? onDeindex : onIndex}
-        >
-          {isIndexed ? "Indexed" : "Index"}
-        </Button>
+        <>
+          <StatusIndicator
+            status={
+              isPending ? "pending" : isIndexed ? "indexed" : "not-indexed"
+            }
+          />
+          <Button
+            variant={isIndexed ? "outline" : "secondary"}
+            size="sm"
+            onClick={isIndexed ? onDeindex : onIndex}
+            disabled={isPending}
+          >
+            {isIndexed ? "Remove" : "Index"}
+          </Button>
+        </>
       )}
     </div>
   );

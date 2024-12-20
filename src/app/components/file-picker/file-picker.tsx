@@ -4,10 +4,13 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { FileExplorer } from "./file-explorer";
 import { BreadcrumbNavigation } from "./breadcrumb-navigation";
+import { ErrorBoundary } from "../shared/error-boundary";
 import { useConnection } from "@/app/hooks/api/use-connection";
 import { useResources } from "@/app/hooks/api/use-resources";
 import { useNavigation } from "@/app/hooks/ui/use-navigation";
-import { ErrorBoundary } from "../shared/error-boundary";
+import { useFileSelection } from "@/app/hooks/ui/use-file-selection";
+import { useKeyboardSelection } from "@/app/hooks/ui/use-keyboard-selection";
+import { useIndexing } from "@/app/hooks/api/use-indexing";
 
 export function FilePicker() {
   const { connection } = useConnection();
@@ -26,16 +29,53 @@ export function FilePicker() {
     resourceId: currentResourceId,
   });
 
-  const handleFileSelect = useCallback((fileId: string) => {
-    // Will be implemented in the selection phase
-    console.log("Selected:", fileId);
-  }, []);
+  const {
+    selectedFiles,
+    toggleSelection,
+    selectRange,
+    clearSelection,
+    selectAll,
+  } = useFileSelection();
+
+  // Set up keyboard selection
+  useKeyboardSelection({
+    files: resources || [],
+    selectedFiles,
+    onToggleSelection: toggleSelection,
+    onSelectRange: selectRange,
+    onSelectAll: selectAll,
+    onClearSelection: clearSelection,
+  });
+
+  const handleFileSelect = useCallback(
+    (fileId: string, e: React.MouseEvent) => {
+      toggleSelection(fileId, e.metaKey || e.ctrlKey || e.shiftKey);
+    },
+    [toggleSelection]
+  );
 
   const handleFolderOpen = useCallback(
     (path: string, resourceId: string) => {
+      clearSelection(); // Clear selection when navigating
       navigateToFolder(path, resourceId);
     },
-    [navigateToFolder]
+    [navigateToFolder, clearSelection]
+  );
+
+  const { indexFiles, isPending } = useIndexing();
+
+  const handleIndex = useCallback(
+    async (fileId: string) => {
+      const file = resources.find((r) => r.resource_id === fileId);
+      if (!file || !connection) return;
+
+      try {
+        await indexFiles(connection.connection_id, [file]);
+      } catch (error) {
+        console.error("Failed to index file:", error);
+      }
+    },
+    [connection, resources, indexFiles]
   );
 
   return (
@@ -69,11 +109,12 @@ export function FilePicker() {
         <div className="p-4">
           <FileExplorer
             files={resources}
-            selectedFiles={[]}
+            selectedFiles={selectedFiles}
             onFileSelect={handleFileSelect}
             onFolderOpen={(resourceId, path) =>
               handleFolderOpen(path, resourceId)
             }
+            onIndex={handleIndex}
             isLoading={isLoading}
             error={error?.message}
           />

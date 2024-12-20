@@ -6,8 +6,9 @@ import { FileItem } from "@/app/lib/types/file";
 interface FileExplorerProps {
   files: FileItem[];
   selectedFiles: string[];
-  onFileSelect: (fileId: string) => void;
+  onFileSelect: (fileId: string, e: React.MouseEvent) => void;
   onFolderOpen: (resourceId: string, path: string) => void;
+  onIndex: (fileId: string) => Promise<void>;
   isLoading: boolean;
   error?: string;
 }
@@ -17,6 +18,7 @@ export function FileExplorer({
   selectedFiles,
   onFileSelect,
   onFolderOpen,
+  onIndex,
   isLoading,
   error,
 }: FileExplorerProps) {
@@ -35,6 +37,7 @@ export function FileExplorer({
         selectedFiles={selectedFiles}
         onFileSelect={onFileSelect}
         onFolderOpen={onFolderOpen}
+        onIndex={onIndex}
       />
     </div>
   );

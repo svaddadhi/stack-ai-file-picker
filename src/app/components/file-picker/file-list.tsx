@@ -4,8 +4,9 @@ import { FileItem } from "./file-item";
 interface FileListProps {
   files: FileItemType[];
   selectedFiles: string[];
-  onFileSelect: (fileId: string) => void;
+  onFileSelect: (fileId: string, e: React.MouseEvent) => void;
   onFolderOpen: (resourceId: string, path: string) => void;
+  onIndex: (fileId: string) => Promise<void>;
 }
 
 export function FileList({
@@ -13,6 +14,7 @@ export function FileList({
   selectedFiles,
   onFileSelect,
   onFolderOpen,
+  onIndex,
 }: FileListProps) {
   if (files.length === 0) {
     return (
@@ -34,14 +36,14 @@ export function FileList({
           isSelected={selectedFiles.includes(file.resource_id)}
           isIndexed={file.status === "indexed"}
           metadata={file.metadata}
-          onSelect={() => onFileSelect(file.resource_id)}
+          onSelect={(e) => onFileSelect(file.resource_id, e)}
           onOpen={
             file.inode_type === "directory"
               ? () => onFolderOpen(file.resource_id, file.inode_path.path)
               : undefined
           }
-          onIndex={() => console.log("Index:", file.resource_id)}
-          onDeindex={() => console.log("Deindex:", file.resource_id)}
+          onIndex={() => onIndex(file.resource_id)}
+          onDeindex={() => console.log("Deindex:", file.resource_id)} // We'll implement this later
         />
       ))}
     </div>
