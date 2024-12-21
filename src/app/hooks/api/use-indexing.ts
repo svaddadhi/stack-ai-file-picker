@@ -5,12 +5,15 @@ import type { FileItem } from "@/app/lib/types/file";
 export function useIndexing(
   kbId: string | null,
   setKbId: (val: string) => void,
-  existingKBSourceIds: string[] // see explanation below
+  existingKBSourceIds: string[]
 ) {
-  const { createKnowledgeBase, updateKnowledgeBase, syncKnowledgeBase } =
-    useKnowledgeBase(kbId || undefined);
+  const {
+    createKnowledgeBase,
+    updateKnowledgeBase,
+    syncKnowledgeBase,
+    deleteResourceFromKB,
+  } = useKnowledgeBase(kbId || undefined);
 
-  // If we don't have a KB yet, create one. If we have one, patch it.
   const addResourcesToKB = useCallback(
     async (connectionId: string, fileIds: string[]) => {
       if (!kbId) {
@@ -21,7 +24,6 @@ export function useIndexing(
           name: "My Hybrid KB",
         });
         const newId = newKB.knowledge_base_id;
-        // store the kbId in state
         setKbId(newId);
         return newId;
       } else {
@@ -42,7 +44,6 @@ export function useIndexing(
     ]
   );
 
-  // Index: adds items to the KB, then triggers a sync
   const indexFiles = useCallback(
     async (connectionId: string, files: FileItem[]) => {
       const fileIds = files.map((f) => f.resource_id);
@@ -53,16 +54,18 @@ export function useIndexing(
   );
 
   const deindexFiles = useCallback(
-    async (fileIds: string[]) => {
+    async (file: FileItem) => {
       if (!kbId) return;
 
-      console.warn(
-        "[useIndexing] Deindex not fully implemented in the 'hybrid' approach."
-      );
-
-      await syncKnowledgeBase(kbId);
+      try {
+        await deleteResourceFromKB(kbId, file.inode_path.path);
+        await syncKnowledgeBase(kbId);
+      } catch (err) {
+        console.error("Failed to deindex file:", err);
+        throw err;
+      }
     },
-    [kbId, syncKnowledgeBase]
+    [kbId, deleteResourceFromKB, syncKnowledgeBase]
   );
 
   return { indexFiles, deindexFiles };

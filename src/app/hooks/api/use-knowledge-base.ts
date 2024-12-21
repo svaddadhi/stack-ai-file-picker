@@ -61,17 +61,26 @@ export function useKnowledgeBase(kbId?: string) {
     });
   };
 
+  const deleteResourceFromKB = async (kbId: string, path: string) => {
+    const url = `${endpoints.knowledgeBase.resources(
+      kbId
+    )}?resource_path=${encodeURIComponent(path)}`;
+    return apiClient.fetchWithAuth(url, {
+      method: "DELETE",
+    });
+  };
+
   const syncKnowledgeBase = async (knowledgeBaseId: string) => {
     if (!orgId) throw new Error("Organization ID not found");
     return apiClient.fetchWithAuth(
-      endpoints.knowledgeBase.sync(knowledgeBaseId, orgId),
-      { method: "GET" }
+      endpoints.knowledgeBase.sync(knowledgeBaseId, orgId)
     );
   };
 
   return {
     createKnowledgeBase,
     updateKnowledgeBase,
+    deleteResourceFromKB,
     syncKnowledgeBase,
     orgId,
   };

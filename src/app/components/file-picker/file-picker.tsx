@@ -162,22 +162,45 @@ export function FilePicker() {
         return;
       }
 
+      const file = gdriveItems.find((r) => r.resource_id === fileId);
+      if (!file) {
+        console.error("File not found");
+        return;
+      }
+
+      setFileStatusMap((prev) => ({
+        ...prev,
+        [fileId]: {
+          isIndexed: prev[fileId]?.isIndexed ?? false,
+          isPending: true,
+        },
+      }));
+
       try {
-        await deindexFiles([fileId]);
+        await deindexFiles(file);
 
         setFileStatusMap((prev) => ({
           ...prev,
           [fileId]: { isIndexed: false, isPending: false },
         }));
 
-        // Re-fetch
+        // Re-fetch to ensure UI is in sync
         await refreshKB();
         await refreshGDrive();
       } catch (err) {
         console.error("Deindex error:", err);
+
+        // Reset pending state but maintain previous indexed state
+        setFileStatusMap((prev) => ({
+          ...prev,
+          [fileId]: {
+            isIndexed: prev[fileId]?.isIndexed ?? false,
+            isPending: false,
+          },
+        }));
       }
     },
-    [kbId, deindexFiles, refreshKB, refreshGDrive]
+    [kbId, gdriveItems, deindexFiles, refreshKB, refreshGDrive]
   );
 
   const mergedItems: FileItem[] = gdriveItems.map((item) => {

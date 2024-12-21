@@ -1,7 +1,6 @@
 import { AuthResponse } from "../types/api";
 
 const API_URL = "https://api.stack-ai.com";
-
 const AUTH_URL = "https://sb.stack-ai.com";
 const ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZic3VhZGZxaGtseG9rbWxodHNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NzM0NTg5ODAsImV4cCI6MTk4OTAzNDk4MH0.Xjry9m7oc42_MsLRc1bZhTTzip3srDjJ6fJMkwhXQ9s";
@@ -80,13 +79,8 @@ class ApiClient {
       Authorization: `Bearer ${this.accessToken}`,
     };
 
-    if (!isGetRequest) {
+    if (!isGetRequest && options.method !== "DELETE") {
       headers["Content-Type"] = "application/json";
-    } else {
-      if (options.body) {
-        console.log("[ApiClient] Removing body from GET request");
-        delete options.body;
-      }
     }
 
     const response = await fetch(`${API_URL}${endpoint}`, {
@@ -98,15 +92,21 @@ class ApiClient {
       "[ApiClient] fetchWithAuth - response status:",
       response.status
     );
+
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`[ApiClient] API error (${response.status}):`, errorText);
       throw new Error(`API request failed: ${response.statusText}`);
     }
 
-    const jsonData = await response.json();
-    console.log("[ApiClient] fetchWithAuth - response data:", jsonData);
-    return jsonData;
+    // Only try to parse JSON if there's content and it's not a DELETE
+    if (response.status !== 204) {
+      const jsonData = await response.json();
+      console.log("[ApiClient] fetchWithAuth - response data:", jsonData);
+      return jsonData;
+    }
+
+    return null;
   }
 
   getAccessToken(): string | null {
