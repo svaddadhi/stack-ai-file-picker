@@ -67,14 +67,11 @@ class ApiClient {
     const isGetRequest =
       !options.method || options.method.toUpperCase() === "GET";
 
-    // Normalize headers to a plain Record<string, string>
     let originalHeaders: Record<string, string> = {};
 
     if (options.headers instanceof Headers) {
-      // Convert Headers to a plain object
       originalHeaders = Object.fromEntries(options.headers.entries());
     } else if (options.headers && typeof options.headers === "object") {
-      // If it's already a record or object, just cast it
       originalHeaders = options.headers as Record<string, string>;
     }
 
@@ -83,11 +80,9 @@ class ApiClient {
       Authorization: `Bearer ${this.accessToken}`,
     };
 
-    // For GET requests, do not set Content-Type and do not send a body
     if (!isGetRequest) {
       headers["Content-Type"] = "application/json";
     } else {
-      // Remove body if any was inadvertently passed for a GET request
       if (options.body) {
         console.log("[ApiClient] Removing body from GET request");
         delete options.body;

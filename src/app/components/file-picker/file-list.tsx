@@ -7,6 +7,7 @@ interface FileListProps {
   onFileSelect: (fileId: string, e: React.MouseEvent) => void;
   onFolderOpen: (resourceId: string, path: string) => void;
   onIndex: (fileId: string) => Promise<void>;
+  onDeindex: (fileId: string) => Promise<void>;
 }
 
 export function FileList({
@@ -15,6 +16,7 @@ export function FileList({
   onFileSelect,
   onFolderOpen,
   onIndex,
+  onDeindex,
 }: FileListProps) {
   console.log("FileList resources:", files);
 
@@ -41,6 +43,7 @@ export function FileList({
             path={file.inode_path.path}
             isSelected={selectedFiles.includes(file.resource_id)}
             isIndexed={file.status === "indexed"}
+            isPending={file.isPending}
             metadata={file.metadata}
             onSelect={(e) => onFileSelect(file.resource_id, e)}
             onOpen={
@@ -49,7 +52,7 @@ export function FileList({
                 : undefined
             }
             onIndex={() => onIndex(file.resource_id)}
-            onDeindex={() => console.log("Deindex:", file.resource_id)}
+            onDeindex={() => onDeindex(file.resource_id)}
           />
         );
       })}

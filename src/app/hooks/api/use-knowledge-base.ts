@@ -1,6 +1,7 @@
 import useSWR from "swr";
 import { apiClient } from "@/app/lib/api/client";
 import { endpoints } from "@/app/lib/api/endpoint";
+import { useCallback } from "react";
 
 interface CreateKBParams {
   connectionId: string;
@@ -13,7 +14,6 @@ export function useKnowledgeBase(kbId?: string) {
   const { data: orgData } = useSWR(endpoints.organization.current, (url) =>
     apiClient.fetchWithAuth(url)
   );
-
   const orgId = orgData?.org_id;
 
   const createKnowledgeBase = async ({
@@ -50,28 +50,51 @@ export function useKnowledgeBase(kbId?: string) {
     return response;
   };
 
+  const updateKnowledgeBase = async (
+    kbId: string,
+    connectionSourceIds: string[]
+  ) => {
+    const patchUrl = `${endpoints.knowledgeBase.create}/${kbId}`;
+    return apiClient.fetchWithAuth(patchUrl, {
+      method: "PATCH",
+      body: JSON.stringify({ connection_source_ids: connectionSourceIds }),
+    });
+  };
+
   const syncKnowledgeBase = async (knowledgeBaseId: string) => {
     if (!orgId) throw new Error("Organization ID not found");
-
     return apiClient.fetchWithAuth(
       endpoints.knowledgeBase.sync(knowledgeBaseId, orgId),
       { method: "GET" }
     );
   };
 
-  const {
-    data: resources,
-    error,
-    isLoading,
-  } = useSWR(kbId ? endpoints.knowledgeBase.children(kbId) : null, (url) =>
-    apiClient.fetchWithAuth(url)
+  return {
+    createKnowledgeBase,
+    updateKnowledgeBase,
+    syncKnowledgeBase,
+    orgId,
+  };
+}
+
+export function useKBChildren(kbId: string | undefined, resourcePath = "/") {
+  const fetcher = useCallback(
+    (url: string) => apiClient.fetchWithAuth(url),
+    []
+  );
+
+  const pathEncoded = encodeURIComponent(resourcePath || "/");
+  const { data, error, isLoading, mutate } = useSWR(
+    kbId
+      ? `/knowledge_bases/${kbId}/resources/children?resource_path=${pathEncoded}`
+      : null,
+    fetcher
   );
 
   return {
-    resources,
-    error,
-    isLoading,
-    createKnowledgeBase,
-    syncKnowledgeBase,
+    kbResources: data || [],
+    kbError: error,
+    kbLoading: isLoading,
+    refreshKB: mutate,
   };
 }

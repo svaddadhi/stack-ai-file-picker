@@ -11,4 +11,6 @@ export interface FileItem {
     type?: string;
   };
   status?: "indexed" | "pending" | "not-indexed";
+  isPending?: boolean;
+  isIndexed?: boolean;
 }

@@ -22,7 +22,6 @@ export function useKeyboardSelection({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore key events when typing in input fields
       if (
         e.target instanceof HTMLInputElement ||
         e.target instanceof HTMLTextAreaElement
@@ -30,20 +29,17 @@ export function useKeyboardSelection({
         return;
       }
 
-      // Command/Ctrl + A to select all
       if ((e.metaKey || e.ctrlKey) && e.key === "a") {
         e.preventDefault();
         onSelectAll(files);
         return;
       }
 
-      // Escape to clear selection
       if (e.key === "Escape") {
         onClearSelection();
         return;
       }
 
-      // Handle shift + click for range selection
       if (e.shiftKey && lastSelectedRef.current && selectedFiles.length > 0) {
         const lastSelected = lastSelectedRef.current;
         const currentSelected = selectedFiles[selectedFiles.length - 1];
@@ -55,7 +51,6 @@ export function useKeyboardSelection({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [files, selectedFiles, onSelectAll, onClearSelection, onSelectRange]);
 
-  // Track last selected item for range selection
   useEffect(() => {
     if (selectedFiles.length > 0) {
       lastSelectedRef.current = selectedFiles[selectedFiles.length - 1];

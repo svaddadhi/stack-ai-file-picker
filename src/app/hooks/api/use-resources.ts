@@ -28,7 +28,6 @@ export function useResources({ connectionId, resourceId }: UseResourcesProps) {
     url,
     (url: string) => {
       console.log("[useResources] SWR fetch:", url);
-      // Just a GET request with no body is made here
       return apiClient.fetchWithAuth(url);
     }
   );

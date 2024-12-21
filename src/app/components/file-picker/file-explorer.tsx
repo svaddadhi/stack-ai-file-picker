@@ -9,6 +9,7 @@ interface FileExplorerProps {
   onFileSelect: (fileId: string, e: React.MouseEvent) => void;
   onFolderOpen: (resourceId: string, path: string) => void;
   onIndex: (fileId: string) => Promise<void>;
+  onDeindex: (fileId: string) => Promise<void>;
   isLoading: boolean;
   error?: string;
 }
@@ -19,6 +20,7 @@ export function FileExplorer({
   onFileSelect,
   onFolderOpen,
   onIndex,
+  onDeindex,
   isLoading,
   error,
 }: FileExplorerProps) {
@@ -38,6 +40,7 @@ export function FileExplorer({
         onFileSelect={onFileSelect}
         onFolderOpen={onFolderOpen}
         onIndex={onIndex}
+        onDeindex={onDeindex}
       />
     </div>
   );

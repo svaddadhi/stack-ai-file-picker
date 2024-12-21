@@ -1,21 +1,38 @@
-import { useCallback } from "react";
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+
 import { FileExplorer } from "./file-explorer";
 import { BreadcrumbNavigation } from "./breadcrumb-navigation";
 import { ErrorBoundary } from "../shared/error-boundary";
 import { Toolbar } from "./toolbar";
+
 import { useSortFilter } from "@/app/hooks/ui/use-sort-filter";
 import { useConnection } from "@/app/hooks/api/use-connection";
 import { useResources } from "@/app/hooks/api/use-resources";
+import { useKBChildren } from "@/app/hooks/api/use-knowledge-base";
 import { useNavigation } from "@/app/hooks/ui/use-navigation";
 import { useFileSelection } from "@/app/hooks/ui/use-file-selection";
 import { useKeyboardSelection } from "@/app/hooks/ui/use-keyboard-selection";
 import { useIndexing } from "@/app/hooks/api/use-indexing";
 
+import type { FileItem } from "@/app/lib/types/file";
+
+interface LocalFileStatus {
+  isIndexed: boolean;
+  isPending: boolean;
+}
+type FileStatusMap = Record<string, LocalFileStatus>;
+
 export function FilePicker() {
   const { connection } = useConnection();
+
+  const [kbId, setKbId] = useState<string | null>(null);
+
+  const [fileStatusMap, setFileStatusMap] = useState<FileStatusMap>({});
 
   const {
     currentPath,
@@ -28,6 +45,37 @@ export function FilePicker() {
   } = useNavigation();
 
   const {
+    resources: gdriveItems,
+    error: gdriveError,
+    isLoading: gdriveLoading,
+    refreshResources: refreshGDrive,
+  } = useResources({
+    connectionId: connection?.connection_id || "",
+    resourceId: currentResourceId,
+  });
+
+  const { kbResources, kbError, kbLoading, refreshKB } = useKBChildren(
+    kbId ?? undefined,
+    "/"
+  );
+
+  const {
+    selectedFiles,
+    toggleSelection,
+    selectRange,
+    clearSelection,
+    selectAll,
+  } = useFileSelection();
+  useKeyboardSelection({
+    files: gdriveItems,
+    selectedFiles,
+    onToggleSelection: toggleSelection,
+    onSelectRange: selectRange,
+    onSelectAll: selectAll,
+    onClearSelection: clearSelection,
+  });
+
+  const {
     searchTerm,
     setSearchTerm,
     sortType,
@@ -37,37 +85,126 @@ export function FilePicker() {
     processFiles,
   } = useSortFilter();
 
-  const { resources, isLoading, error } = useResources({
-    connectionId: connection?.connection_id || "",
-    resourceId: currentResourceId,
+  const { indexFiles, deindexFiles } = useIndexing(
+    kbId,
+    setKbId,
+    kbResources.map((f) => f.resource_id)
+  );
+
+  useEffect(() => {
+    if (!kbResources?.length) return;
+    setFileStatusMap((prev) => {
+      let changed = false;
+
+      const nextMap: FileStatusMap = { ...prev };
+
+      for (const kbFile of kbResources) {
+        const id = kbFile.resource_id;
+        const existing = nextMap[id];
+
+        if (!existing || existing.isIndexed === false) {
+          nextMap[id] = {
+            isPending: existing?.isPending ?? false,
+            isIndexed: true,
+          };
+          changed = true;
+        }
+      }
+
+      return changed ? nextMap : prev;
+    });
+  }, [kbResources]);
+
+  const handleIndex = useCallback(
+    async (fileId: string) => {
+      if (!connection) return;
+
+      const file = gdriveItems.find((r) => r.resource_id === fileId);
+      if (!file) return;
+
+      setFileStatusMap((prev) => ({
+        ...prev,
+        [fileId]: {
+          isIndexed: prev[fileId]?.isIndexed ?? false,
+          isPending: true,
+        },
+      }));
+
+      try {
+        await indexFiles(connection.connection_id, [file]);
+
+        setFileStatusMap((prev) => ({
+          ...prev,
+          [fileId]: { isIndexed: true, isPending: false },
+        }));
+
+        await refreshKB();
+        await refreshGDrive();
+      } catch (err) {
+        console.error("Index error:", err);
+
+        setFileStatusMap((prev) => ({
+          ...prev,
+          [fileId]: {
+            ...prev[fileId],
+            isPending: false,
+          },
+        }));
+      }
+    },
+    [connection, gdriveItems, indexFiles, refreshKB, refreshGDrive]
+  );
+
+  const handleDeindex = useCallback(
+    async (fileId: string) => {
+      if (!kbId) {
+        console.warn("No KB to remove from yet");
+        return;
+      }
+
+      try {
+        await deindexFiles([fileId]);
+
+        setFileStatusMap((prev) => ({
+          ...prev,
+          [fileId]: { isIndexed: false, isPending: false },
+        }));
+
+        // Re-fetch
+        await refreshKB();
+        await refreshGDrive();
+      } catch (err) {
+        console.error("Deindex error:", err);
+      }
+    },
+    [kbId, deindexFiles, refreshKB, refreshGDrive]
+  );
+
+  const mergedItems: FileItem[] = gdriveItems.map((item) => {
+    const localStatus = fileStatusMap[item.resource_id] ?? {
+      isPending: false,
+      isIndexed: false,
+    };
+    return {
+      ...item,
+      isPending: localStatus.isPending,
+      isIndexed: localStatus.isIndexed,
+
+      status: localStatus.isPending
+        ? "pending"
+        : localStatus.isIndexed
+        ? "indexed"
+        : "not-indexed",
+    };
   });
 
-  const {
-    selectedFiles,
-    toggleSelection,
-    selectRange,
-    clearSelection,
-    selectAll,
-  } = useFileSelection();
+  const finalFiles = processFiles(mergedItems);
 
-  // Keyboard selection logs
-  useKeyboardSelection({
-    files: resources || [],
-    selectedFiles,
-    onToggleSelection: toggleSelection,
-    onSelectRange: selectRange,
-    onSelectAll: selectAll,
-    onClearSelection: clearSelection,
-  });
+  const isLoading = gdriveLoading || kbLoading;
+  const errorMsg = gdriveError?.message || kbError?.message;
 
   const handleFileSelect = useCallback(
     (fileId: string, e: React.MouseEvent) => {
-      console.log(
-        "[FilePicker] handleFileSelect - fileId:",
-        fileId,
-        "multiSelect:",
-        e.metaKey || e.ctrlKey || e.shiftKey
-      );
       toggleSelection(fileId, e.metaKey || e.ctrlKey || e.shiftKey);
     },
     [toggleSelection]
@@ -75,45 +212,10 @@ export function FilePicker() {
 
   const handleFolderOpen = useCallback(
     (path: string, resourceId: string) => {
-      console.log(
-        "[FilePicker] handleFolderOpen - path:",
-        path,
-        "resourceId:",
-        resourceId
-      );
       clearSelection();
       navigateToFolder(path, resourceId);
     },
-    [navigateToFolder, clearSelection]
-  );
-
-  const { indexFiles, isPending } = useIndexing();
-
-  const handleIndex = useCallback(
-    async (fileId: string) => {
-      console.log("[FilePicker] handleIndex - indexing fileId:", fileId);
-      const file = resources.find((r) => r.resource_id === fileId);
-      if (!file || !connection) {
-        console.error(
-          "[FilePicker] handleIndex - file or connection not found"
-        );
-        return;
-      }
-
-      try {
-        await indexFiles(connection.connection_id, [file]);
-        console.log(
-          "[FilePicker] handleIndex - indexing complete for fileId:",
-          fileId
-        );
-      } catch (error) {
-        console.error(
-          "[FilePicker] handleIndex - Failed to index file:",
-          error
-        );
-      }
-    },
-    [connection, resources, indexFiles]
+    [clearSelection, navigateToFolder]
   );
 
   return (
@@ -123,10 +225,7 @@ export function FilePicker() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => {
-              console.log("[FilePicker] navigateBack");
-              navigateBack();
-            }}
+            onClick={navigateBack}
             disabled={!canGoBack}
           >
             <ChevronLeft className="h-4 w-4" />
@@ -134,20 +233,14 @@ export function FilePicker() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => {
-              console.log("[FilePicker] navigateForward");
-              navigateForward();
-            }}
+            onClick={navigateForward}
             disabled={!canGoForward}
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
           <BreadcrumbNavigation
             currentPath={currentPath}
-            onNavigate={(path) => {
-              console.log("[FilePicker] Breadcrumb navigate to:", path);
-              navigateToFolder(path);
-            }}
+            onNavigate={(p) => navigateToFolder(p)}
           />
         </div>
       </div>
@@ -156,31 +249,22 @@ export function FilePicker() {
         <div className="p-4">
           <Toolbar
             searchTerm={searchTerm}
-            onSearch={(term) => {
-              console.log("[FilePicker] Search changed:", term);
-              setSearchTerm(term);
-            }}
+            onSearch={setSearchTerm}
             sortType={sortType}
-            onSort={(type) => {
-              console.log("[FilePicker] Sort changed:", type);
-              setSortType(type);
-            }}
+            onSort={setSortType}
             sortDirection={sortDirection}
-            onDirectionChange={() => {
-              console.log("[FilePicker] Toggling sort direction");
-              toggleSortDirection();
-            }}
+            onDirectionChange={toggleSortDirection}
           />
+
           <FileExplorer
-            files={processFiles(resources)}
+            files={finalFiles}
             selectedFiles={selectedFiles}
             onFileSelect={handleFileSelect}
-            onFolderOpen={(resourceId, path) =>
-              handleFolderOpen(path, resourceId)
-            }
+            onFolderOpen={(resId, path) => handleFolderOpen(path, resId)}
             onIndex={handleIndex}
+            onDeindex={handleDeindex}
             isLoading={isLoading}
-            error={error?.message}
+            error={errorMsg}
           />
         </div>
       </ErrorBoundary>
