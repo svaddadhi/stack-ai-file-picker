@@ -16,7 +16,6 @@ import { useIndexing } from "@/app/hooks/api/use-indexing";
 
 export function FilePicker() {
   const { connection } = useConnection();
-  console.log("[FilePicker] connection:", connection);
 
   const {
     currentPath,
@@ -27,13 +26,6 @@ export function FilePicker() {
     canGoBack,
     canGoForward,
   } = useNavigation();
-
-  console.log(
-    "[FilePicker] currentPath:",
-    currentPath,
-    "currentResourceId:",
-    currentResourceId
-  );
 
   const {
     searchTerm,
@@ -49,14 +41,6 @@ export function FilePicker() {
     connectionId: connection?.connection_id || "",
     resourceId: currentResourceId,
   });
-  console.log(
-    "[FilePicker] useResources result - isLoading:",
-    isLoading,
-    "error:",
-    error,
-    "resources:",
-    resources
-  );
 
   const {
     selectedFiles,

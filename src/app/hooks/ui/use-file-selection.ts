@@ -13,16 +13,15 @@ export function useFileSelection({
   );
 
   const toggleSelection = useCallback(
-    (fileId: string, multiSelect: boolean) => {
+    (fileId: string, multiSelect: boolean = true) => {
       setSelectedFiles((prev) => {
         const newSelection = new Set(prev);
-        if (!multiSelect) {
-          // If not multi-selecting, clear other selections
-          newSelection.clear();
-        }
         if (newSelection.has(fileId)) {
           newSelection.delete(fileId);
         } else {
+          if (!multiSelect) {
+            newSelection.clear();
+          }
           newSelection.add(fileId);
         }
         return newSelection;
