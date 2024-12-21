@@ -16,6 +16,8 @@ import { useIndexing } from "@/app/hooks/api/use-indexing";
 
 export function FilePicker() {
   const { connection } = useConnection();
+  console.log("[FilePicker] connection:", connection);
+
   const {
     currentPath,
     currentResourceId,
@@ -25,6 +27,13 @@ export function FilePicker() {
     canGoBack,
     canGoForward,
   } = useNavigation();
+
+  console.log(
+    "[FilePicker] currentPath:",
+    currentPath,
+    "currentResourceId:",
+    currentResourceId
+  );
 
   const {
     searchTerm,
@@ -40,6 +49,14 @@ export function FilePicker() {
     connectionId: connection?.connection_id || "",
     resourceId: currentResourceId,
   });
+  console.log(
+    "[FilePicker] useResources result - isLoading:",
+    isLoading,
+    "error:",
+    error,
+    "resources:",
+    resources
+  );
 
   const {
     selectedFiles,
@@ -49,7 +66,7 @@ export function FilePicker() {
     selectAll,
   } = useFileSelection();
 
-  // Set up keyboard selection
+  // Keyboard selection logs
   useKeyboardSelection({
     files: resources || [],
     selectedFiles,
@@ -61,6 +78,12 @@ export function FilePicker() {
 
   const handleFileSelect = useCallback(
     (fileId: string, e: React.MouseEvent) => {
+      console.log(
+        "[FilePicker] handleFileSelect - fileId:",
+        fileId,
+        "multiSelect:",
+        e.metaKey || e.ctrlKey || e.shiftKey
+      );
       toggleSelection(fileId, e.metaKey || e.ctrlKey || e.shiftKey);
     },
     [toggleSelection]
@@ -68,7 +91,13 @@ export function FilePicker() {
 
   const handleFolderOpen = useCallback(
     (path: string, resourceId: string) => {
-      clearSelection(); // Clear selection when navigating
+      console.log(
+        "[FilePicker] handleFolderOpen - path:",
+        path,
+        "resourceId:",
+        resourceId
+      );
+      clearSelection();
       navigateToFolder(path, resourceId);
     },
     [navigateToFolder, clearSelection]
@@ -78,13 +107,26 @@ export function FilePicker() {
 
   const handleIndex = useCallback(
     async (fileId: string) => {
+      console.log("[FilePicker] handleIndex - indexing fileId:", fileId);
       const file = resources.find((r) => r.resource_id === fileId);
-      if (!file || !connection) return;
+      if (!file || !connection) {
+        console.error(
+          "[FilePicker] handleIndex - file or connection not found"
+        );
+        return;
+      }
 
       try {
         await indexFiles(connection.connection_id, [file]);
+        console.log(
+          "[FilePicker] handleIndex - indexing complete for fileId:",
+          fileId
+        );
       } catch (error) {
-        console.error("Failed to index file:", error);
+        console.error(
+          "[FilePicker] handleIndex - Failed to index file:",
+          error
+        );
       }
     },
     [connection, resources, indexFiles]
@@ -97,7 +139,10 @@ export function FilePicker() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={navigateBack}
+            onClick={() => {
+              console.log("[FilePicker] navigateBack");
+              navigateBack();
+            }}
             disabled={!canGoBack}
           >
             <ChevronLeft className="h-4 w-4" />
@@ -105,14 +150,20 @@ export function FilePicker() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={navigateForward}
+            onClick={() => {
+              console.log("[FilePicker] navigateForward");
+              navigateForward();
+            }}
             disabled={!canGoForward}
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
           <BreadcrumbNavigation
             currentPath={currentPath}
-            onNavigate={(path) => navigateToFolder(path)}
+            onNavigate={(path) => {
+              console.log("[FilePicker] Breadcrumb navigate to:", path);
+              navigateToFolder(path);
+            }}
           />
         </div>
       </div>
@@ -121,11 +172,20 @@ export function FilePicker() {
         <div className="p-4">
           <Toolbar
             searchTerm={searchTerm}
-            onSearch={setSearchTerm}
+            onSearch={(term) => {
+              console.log("[FilePicker] Search changed:", term);
+              setSearchTerm(term);
+            }}
             sortType={sortType}
-            onSort={setSortType}
+            onSort={(type) => {
+              console.log("[FilePicker] Sort changed:", type);
+              setSortType(type);
+            }}
             sortDirection={sortDirection}
-            onDirectionChange={toggleSortDirection}
+            onDirectionChange={() => {
+              console.log("[FilePicker] Toggling sort direction");
+              toggleSortDirection();
+            }}
           />
           <FileExplorer
             files={processFiles(resources)}

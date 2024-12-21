@@ -33,7 +33,10 @@ export const FileItem = memo(function FileItem({
   onOpen,
   onDeindex,
   onIndex,
+  path,
 }: FileItemProps) {
+  console.log("FileItem props:", { name, type, path });
+
   const Icon = type === "directory" ? FolderIcon : FileIcon;
 
   const handleDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -68,7 +71,7 @@ export const FileItem = memo(function FileItem({
       />
       <Icon className="h-4 w-4 text-gray-500" />
       <span
-        className="flex-grow truncate cursor-pointer"
+        className="flex-grow truncate cursor-pointer text-foreground"
         onClick={handleSelect}
       >
         {name}

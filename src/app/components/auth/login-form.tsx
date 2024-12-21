@@ -19,7 +19,8 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
       await login(email, password);
       onSuccess();
     } catch (err) {
-      console.error("Login failed:", err);
+      // Error is handled in useAuth
+      console.error("Login submission failed:", err);
     }
   };
 
@@ -32,7 +33,13 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <label className="text-sm font-medium">Email</label>
-            <Input type="email" value={email} disabled className="bg-muted" />
+            <Input
+              type="email"
+              value={email}
+              disabled
+              className="bg-muted"
+              aria-label="Email"
+            />
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Password</label>
@@ -41,9 +48,14 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your password"
+              aria-label="Password"
             />
           </div>
-          {error && <div className="text-sm text-red-500">{error}</div>}
+          {error && (
+            <div className="text-sm text-red-500 bg-red-50 dark:bg-red-900/10 p-2 rounded">
+              {error}
+            </div>
+          )}
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? "Logging in..." : "Login"}
           </Button>

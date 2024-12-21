@@ -8,9 +8,15 @@ export function useAuth() {
   const login = useCallback(async (email: string, password: string) => {
     setIsLoading(true);
     setError(null);
+    console.log("[useAuth] Attempting login with email:", email);
     try {
       await apiClient.login(email, password);
+      console.log(
+        "[useAuth] Login successful. AccessToken:",
+        apiClient.getAccessToken()
+      );
     } catch (err) {
+      console.error("[useAuth] Login error:", err);
       setError(err instanceof Error ? err.message : "Authentication failed");
       throw err;
     } finally {
@@ -18,5 +24,24 @@ export function useAuth() {
     }
   }, []);
 
-  return { login, isLoading, error };
+  const logout = useCallback(() => {
+    console.log("[useAuth] Logging out");
+    apiClient.logout();
+  }, []);
+
+  const isAuthenticated = apiClient.isAuthenticated();
+  console.log(
+    "[useAuth] isAuthenticated:",
+    isAuthenticated,
+    "AccessToken:",
+    apiClient.getAccessToken()
+  );
+
+  return {
+    login,
+    logout,
+    isLoading,
+    error,
+    isAuthenticated,
+  };
 }
