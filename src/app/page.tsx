@@ -1,5 +1,5 @@
-import { SWRProvider } from "./providers/swr-provider";
-import { AuthProvider } from "./components/auth/auth-provider";
+import { SWRProvider } from "./providers/SWRProvider";
+import { AuthProvider } from "./components/auth/AuthProvider";
 
 export default function Home() {
   return (
