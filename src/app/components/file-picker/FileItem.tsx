@@ -56,9 +56,7 @@ export const FileItem = memo(function FileItem({
       }`}
       onDoubleClick={handleDoubleClick}
     >
-      {/* Removed the checkbox here; no checkbox is rendered. */}
       <Icon className="h-4 w-4 text-gray-500" />
-
       <span
         className="flex-grow truncate cursor-pointer text-foreground"
         onClick={handleSelect}
@@ -66,34 +64,28 @@ export const FileItem = memo(function FileItem({
         {name}
       </span>
 
-      {type === "file" && (
-        <>
-          <StatusIndicator
-            status={
-              isPending ? "pending" : isIndexed ? "indexed" : "not-indexed"
-            }
-          />
+      <StatusIndicator
+        status={isPending ? "pending" : isIndexed ? "indexed" : "not-indexed"}
+      />
 
-          <Button
-            variant={isIndexed ? "destructive" : "secondary"}
-            size="sm"
-            onClick={isIndexed ? onDeindex : onIndex}
-            disabled={isPending}
-            className="w-24 flex items-center justify-center gap-2"
-          >
-            {isPending ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Indexing...
-              </>
-            ) : isIndexed ? (
-              "Remove"
-            ) : (
-              "Index"
-            )}
-          </Button>
-        </>
-      )}
+      <Button
+        variant={isIndexed ? "destructive" : "secondary"}
+        size="sm"
+        onClick={isIndexed ? onDeindex : onIndex}
+        disabled={isPending}
+        className="w-24 flex items-center justify-center gap-2"
+      >
+        {isPending ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Indexing...
+          </>
+        ) : isIndexed ? (
+          "Remove"
+        ) : (
+          "Index"
+        )}
+      </Button>
     </div>
   );
 });

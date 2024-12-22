@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LoginForm } from "./login-form";
-import { FilePicker } from "../file-picker/file-picker";
-import { useAuth } from "@/app/hooks/api/use-auth";
+import { LoginForm } from "./LoginForm";
+import { FilePicker } from "../file-picker/FilePicker";
+import { useAuth } from "@/app/hooks/api/useAuth";
 
 export function AuthProvider() {
   const [mounted, setMounted] = useState(false);

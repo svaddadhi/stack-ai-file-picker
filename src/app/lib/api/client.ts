@@ -99,7 +99,6 @@ class ApiClient {
       throw new Error(`API request failed: ${response.statusText}`);
     }
 
-    // Only try to parse JSON if there's content and it's not a DELETE
     if (response.status !== 204) {
       const jsonData = await response.json();
       console.log("[ApiClient] fetchWithAuth - response data:", jsonData);

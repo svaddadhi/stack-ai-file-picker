@@ -3,9 +3,6 @@ import useSWR from "swr";
 import { apiClient } from "@/app/lib/api/client";
 import { endpoints } from "@/app/lib/api/endpoint";
 
-/**
- * Fetches the current user's organization info, returning org_id.
- */
 export function useOrganization() {
   const { data, error, isLoading } = useSWR(
     endpoints.organization.current,

@@ -2,6 +2,7 @@ import useSWR from "swr";
 import { apiClient } from "@/app/lib/api/client";
 import { endpoints } from "@/app/lib/api/endpoint";
 import { useCallback } from "react";
+import type { FileItem } from "@/app/lib/types/file";
 
 interface CreateKBParams {
   connectionId: string;
@@ -16,6 +17,7 @@ export function useKnowledgeBase(kbId?: string) {
   );
   const orgId = orgData?.org_id;
 
+  // Create or update a KB with a set of resource IDs
   const createKnowledgeBase = async ({
     connectionId,
     connectionSourceIds,
@@ -54,9 +56,7 @@ export function useKnowledgeBase(kbId?: string) {
     const url = `${endpoints.knowledgeBase.resources(
       kbId
     )}?resource_path=${encodeURIComponent(path)}`;
-    return apiClient.fetchWithAuth(url, {
-      method: "DELETE",
-    });
+    return apiClient.fetchWithAuth(url, { method: "DELETE" });
   };
 
   const syncKnowledgeBase = async (knowledgeBaseId: string) => {
@@ -66,26 +66,48 @@ export function useKnowledgeBase(kbId?: string) {
     );
   };
 
+  const fetchKBChildren = useCallback(
+    async (kbId: string, resourcePath: string) => {
+      const pathEncoded = encodeURIComponent(resourcePath || "/");
+      const endpoint = `/knowledge_bases/${kbId}/resources/children?resource_path=${pathEncoded}`;
+      return apiClient.fetchWithAuth(endpoint);
+    },
+    []
+  );
+
   return {
     createKnowledgeBase,
     deleteResourceFromKB,
     syncKnowledgeBase,
+    fetchKBChildren,
     orgId,
   };
 }
 
 export function useKBChildren(kbId: string | undefined, resourcePath = "/") {
-  const fetcher = useCallback(
-    (url: string) => apiClient.fetchWithAuth(url),
-    []
-  );
+  const safeFetcher = useCallback(async (url: string) => {
+    try {
+      return await apiClient.fetchWithAuth(url);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes("does not exist") && msg.includes("Path error")) {
+        console.warn(
+          "[useKBChildren] 400 error: path does not exist. Returning []."
+        );
+        return [];
+      }
+      throw err;
+    }
+  }, []);
 
   const pathEncoded = encodeURIComponent(resourcePath || "/");
-  const { data, error, isLoading, mutate } = useSWR(
-    kbId
-      ? `/knowledge_bases/${kbId}/resources/children?resource_path=${pathEncoded}`
-      : null,
-    fetcher
+  const swrKey = kbId
+    ? `/knowledge_bases/${kbId}/resources/children?resource_path=${pathEncoded}`
+    : null;
+
+  const { data, error, isLoading, mutate } = useSWR<FileItem[]>(
+    swrKey,
+    safeFetcher
   );
 
   return {

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/app/hooks/api/use-auth";
+import { useAuth } from "@/app/hooks/api/useAuth";
 
 interface LoginFormProps {
   onSuccess: () => void;
@@ -19,7 +19,6 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
       await login(email, password);
       onSuccess();
     } catch (err) {
-      // Error is handled in useAuth
       console.error("Login submission failed:", err);
     }
   };

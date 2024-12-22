@@ -28,6 +28,8 @@ export function FileList({
     );
   }
 
+  const ensureLeadingSlash = (p: string) => (p.startsWith("/") ? p : "/" + p);
+
   return (
     <div className="space-y-1">
       {files.map((file) => {
@@ -48,7 +50,11 @@ export function FileList({
             onSelect={(e) => onFileSelect(file.resource_id, e)}
             onOpen={
               file.inode_type === "directory"
-                ? () => onFolderOpen(file.resource_id, file.inode_path.path)
+                ? () =>
+                    onFolderOpen(
+                      file.resource_id,
+                      ensureLeadingSlash(file.inode_path.path)
+                    )
                 : undefined
             }
             onIndex={() => onIndex(file.resource_id)}

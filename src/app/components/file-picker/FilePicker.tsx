@@ -5,19 +5,19 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-import { FileExplorer } from "./file-explorer";
-import { BreadcrumbNavigation } from "./breadcrumb-navigation";
-import { ErrorBoundary } from "../shared/error-boundary";
+import { FileExplorer } from "./FileExplorer";
+import { BreadcrumbNavigation } from "./BreadcrumbNavigation";
+import { ErrorBoundary } from "../shared/ErrorBoundary";
 import { Toolbar } from "./toolbar";
 
 import { useSortFilter } from "@/app/hooks/ui/use-sort-filter";
-import { useConnection } from "@/app/hooks/api/use-connection";
+import { useConnection } from "@/app/hooks/api/useConnection";
 import { useResources } from "@/app/hooks/api/use-resources";
-import { useKBChildren } from "@/app/hooks/api/use-knowledge-base";
+import { useKBChildren } from "@/app/hooks/api/useKnowledgeBase";
 import { useNavigation } from "@/app/hooks/ui/use-navigation";
 import { useFileSelection } from "@/app/hooks/ui/use-file-selection";
 import { useKeyboardSelection } from "@/app/hooks/ui/use-keyboard-selection";
-import { useIndexing } from "@/app/hooks/api/use-indexing";
+import { useIndexing } from "@/app/hooks/api/useIndexing";
 
 import type { FileItem } from "@/app/lib/types/file";
 
@@ -31,7 +31,6 @@ export function FilePicker() {
   const { connection } = useConnection();
 
   const [kbId, setKbId] = useState<string | null>(null);
-
   const [fileStatusMap, setFileStatusMap] = useState<FileStatusMap>({});
 
   const {
@@ -56,7 +55,7 @@ export function FilePicker() {
 
   const { kbResources, kbError, kbLoading, refreshKB } = useKBChildren(
     kbId ?? undefined,
-    "/"
+    currentPath || "/"
   );
 
   const {
@@ -66,6 +65,7 @@ export function FilePicker() {
     clearSelection,
     selectAll,
   } = useFileSelection();
+
   useKeyboardSelection({
     files: gdriveItems,
     selectedFiles,
@@ -88,37 +88,39 @@ export function FilePicker() {
   const { indexFiles, deindexFiles } = useIndexing(
     kbId,
     setKbId,
-    kbResources.map((f) => f.resource_id)
+    kbResources.map((r) => r.resource_id)
   );
 
   useEffect(() => {
     if (!kbResources?.length) return;
     setFileStatusMap((prev) => {
-      let changed = false;
-
       const nextMap: FileStatusMap = { ...prev };
-
+      let changed = false;
       for (const kbFile of kbResources) {
-        const id = kbFile.resource_id;
-        const existing = nextMap[id];
-
-        if (!existing || existing.isIndexed === false) {
-          nextMap[id] = {
-            isPending: existing?.isPending ?? false,
+        if (
+          !nextMap[kbFile.resource_id] ||
+          !nextMap[kbFile.resource_id].isIndexed
+        ) {
+          nextMap[kbFile.resource_id] = {
             isIndexed: true,
+            isPending: nextMap[kbFile.resource_id]?.isPending ?? false,
           };
           changed = true;
         }
       }
-
       return changed ? nextMap : prev;
     });
   }, [kbResources]);
 
+  function toIndexStatus(isPending: boolean, isIndexed: boolean) {
+    if (isPending) return "pending" as const;
+    if (isIndexed) return "indexed" as const;
+    return "not-indexed" as const;
+  }
+
   const handleIndex = useCallback(
     async (fileId: string) => {
       if (!connection) return;
-
       const file = gdriveItems.find((r) => r.resource_id === fileId);
       if (!file) return;
 
@@ -142,7 +144,7 @@ export function FilePicker() {
         await refreshGDrive();
       } catch (err) {
         console.error("Index error:", err);
-
+        // Reset pending
         setFileStatusMap((prev) => ({
           ...prev,
           [fileId]: {
@@ -157,16 +159,13 @@ export function FilePicker() {
 
   const handleDeindex = useCallback(
     async (fileId: string) => {
+      if (!connection) return; // If no GDrive connection, we can't remove anyway
       if (!kbId) {
-        console.warn("No KB to remove from yet");
+        console.warn("[FilePicker] No KB to remove from yet; ignoring.");
         return;
       }
-
       const file = gdriveItems.find((r) => r.resource_id === fileId);
-      if (!file) {
-        console.error("File not found");
-        return;
-      }
+      if (!file) return;
 
       setFileStatusMap((prev) => ({
         ...prev,
@@ -184,13 +183,10 @@ export function FilePicker() {
           [fileId]: { isIndexed: false, isPending: false },
         }));
 
-        // Re-fetch to ensure UI is in sync
         await refreshKB();
         await refreshGDrive();
       } catch (err) {
         console.error("Deindex error:", err);
-
-        // Reset pending state but maintain previous indexed state
         setFileStatusMap((prev) => ({
           ...prev,
           [fileId]: {
@@ -200,7 +196,7 @@ export function FilePicker() {
         }));
       }
     },
-    [kbId, gdriveItems, deindexFiles, refreshKB, refreshGDrive]
+    [connection, kbId, gdriveItems, deindexFiles, refreshKB, refreshGDrive]
   );
 
   const mergedItems: FileItem[] = gdriveItems.map((item) => {
@@ -210,14 +206,10 @@ export function FilePicker() {
     };
     return {
       ...item,
-      connection_id: connection?.connection_id, // Add this
+      connection_id: connection?.connection_id, // ensure we set this
       isPending: localStatus.isPending,
       isIndexed: localStatus.isIndexed,
-      status: localStatus.isPending
-        ? "pending"
-        : localStatus.isIndexed
-        ? "indexed"
-        : "not-indexed",
+      status: toIndexStatus(localStatus.isPending, localStatus.isIndexed),
     };
   });
 
