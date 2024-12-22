@@ -159,7 +159,7 @@ export function FilePicker() {
 
   const handleDeindex = useCallback(
     async (fileId: string) => {
-      if (!connection) return; // If no GDrive connection, we can't remove anyway
+      if (!connection) return;
       if (!kbId) {
         console.warn("[FilePicker] No KB to remove from yet; ignoring.");
         return;
@@ -206,7 +206,7 @@ export function FilePicker() {
     };
     return {
       ...item,
-      connection_id: connection?.connection_id, // ensure we set this
+      connection_id: connection?.connection_id,
       isPending: localStatus.isPending,
       isIndexed: localStatus.isIndexed,
       status: toIndexStatus(localStatus.isPending, localStatus.isIndexed),
@@ -218,19 +218,19 @@ export function FilePicker() {
   const isLoading = gdriveLoading || kbLoading;
   const errorMsg = gdriveError?.message || kbError?.message;
 
+  const handleFolderOpen = useCallback(
+    (resourceId: string, path: string) => {
+      clearSelection();
+      navigateToFolder(path, resourceId);
+    },
+    [clearSelection, navigateToFolder]
+  );
+
   const handleFileSelect = useCallback(
     (fileId: string, e: React.MouseEvent) => {
       toggleSelection(fileId, e.metaKey || e.ctrlKey || e.shiftKey);
     },
     [toggleSelection]
-  );
-
-  const handleFolderOpen = useCallback(
-    (path: string, resourceId: string) => {
-      clearSelection();
-      navigateToFolder(path, resourceId);
-    },
-    [clearSelection, navigateToFolder]
   );
 
   return (
@@ -275,7 +275,7 @@ export function FilePicker() {
             files={finalFiles}
             selectedFiles={selectedFiles}
             onFileSelect={handleFileSelect}
-            onFolderOpen={(resId, path) => handleFolderOpen(path, resId)}
+            onFolderOpen={handleFolderOpen}
             onIndex={handleIndex}
             onDeindex={handleDeindex}
             isLoading={isLoading}

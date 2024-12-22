@@ -5,7 +5,7 @@ interface FileListProps {
   files: FileItemType[];
   selectedFiles: string[];
   onFileSelect: (fileId: string, e: React.MouseEvent) => void;
-  onFolderOpen: (resourceId: string, path: string) => void;
+  onFolderOpen: (resourceId: string, path: string) => void; // <= note the signature
   onIndex: (fileId: string) => Promise<void>;
   onDeindex: (fileId: string) => Promise<void>;
 }

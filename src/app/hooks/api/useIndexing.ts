@@ -12,7 +12,7 @@ export function useIndexing(
     deleteResourceFromKB,
     syncKnowledgeBase,
     fetchKBChildren,
-  } = useKnowledgeBase(kbId || undefined);
+  } = useKnowledgeBase();
 
   const indexFiles = useCallback(
     async (connectionId: string, files: FileItem[]) => {
@@ -65,12 +65,12 @@ export function useIndexing(
         const allKB = await fetchKBChildren(kbId, "/");
 
         const removedIds = allKB
-          .filter((kbItem) => {
+          .filter((kbItem: any) => {
             let p = kbItem.inode_path.path;
             if (!p.startsWith("/")) p = `/${p}`;
             return p === path || p.startsWith(`${path}/`);
           })
-          .map((kbItem) => kbItem.resource_id);
+          .map((kbItem: any) => kbItem.resource_id);
 
         let updated = existingKBSourceIds.filter(
           (id) => !removedIds.includes(id)
