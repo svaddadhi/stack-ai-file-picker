@@ -16,7 +16,10 @@ export function useSortFilter() {
       return [...files].sort((a, b) => {
         let comparison = 0;
         if (sortType === "name") {
-          comparison = a.name.localeCompare(b.name);
+          // Get the file name from the last part of the path
+          const nameA = a.inode_path.path.split("/").pop() || a.inode_path.path;
+          const nameB = b.inode_path.path.split("/").pop() || b.inode_path.path;
+          comparison = nameA.localeCompare(nameB);
         } else if (
           sortType === "date" &&
           a.metadata?.modifiedDate &&
@@ -37,9 +40,11 @@ export function useSortFilter() {
       if (!searchTerm) return files;
 
       const normalizedSearch = searchTerm.toLowerCase();
-      return files.filter((file) =>
-        file.name.toLowerCase().includes(normalizedSearch)
-      );
+      return files.filter((file) => {
+        const fileName =
+          file.inode_path.path.split("/").pop() || file.inode_path.path;
+        return fileName.toLowerCase().includes(normalizedSearch);
+      });
     },
     [searchTerm]
   );
