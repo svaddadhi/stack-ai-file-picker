@@ -1,5 +1,5 @@
-import { SearchBar } from "./search-bar";
-import { SortDropdown } from "./sort-dropdown";
+import { SearchBar } from "./SearchBar";
+import { SortDropdown } from "./SortDropdown";
 
 type SortType = "name" | "date" | null;
 
