@@ -17,7 +17,6 @@ export function useKnowledgeBase() {
   );
   const orgId = orgData?.org_id;
 
-  // Create or update a KB with a set of resource IDs
   const createKnowledgeBase = async ({
     connectionId,
     connectionSourceIds,
@@ -85,21 +84,6 @@ export function useKnowledgeBase() {
 }
 
 export function useKBChildren(kbId: string | undefined, resourcePath = "/") {
-  const safeFetcher = useCallback(async (url: string) => {
-    try {
-      return await apiClient.fetchWithAuth(url);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      if (msg.includes("does not exist") && msg.includes("Path error")) {
-        console.warn(
-          "[useKBChildren] 400 error: path does not exist. Returning []."
-        );
-        return [];
-      }
-      throw err;
-    }
-  }, []);
-
   const pathEncoded = encodeURIComponent(resourcePath || "/");
   const swrKey = kbId
     ? `/knowledge_bases/${kbId}/resources/children?resource_path=${pathEncoded}`
@@ -107,7 +91,7 @@ export function useKBChildren(kbId: string | undefined, resourcePath = "/") {
 
   const { data, error, isLoading, mutate } = useSWR<FileItem[]>(
     swrKey,
-    safeFetcher
+    (url: string) => apiClient.fetchWithAuth(url)
   );
 
   return {

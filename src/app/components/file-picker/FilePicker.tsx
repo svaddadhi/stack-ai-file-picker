@@ -124,6 +124,7 @@ export function FilePicker() {
       const file = gdriveItems.find((r) => r.resource_id === fileId);
       if (!file) return;
 
+      // Mark pending
       setFileStatusMap((prev) => ({
         ...prev,
         [fileId]: {
@@ -160,12 +161,11 @@ export function FilePicker() {
   const handleDeindex = useCallback(
     async (fileId: string) => {
       if (!connection) return;
-      if (!kbId) {
-        console.warn("[FilePicker] No KB to remove from yet; ignoring.");
+      const file = gdriveItems.find((r) => r.resource_id === fileId);
+      if (!file) {
+        console.warn("[FilePicker] Could not find file to deindex:", fileId);
         return;
       }
-      const file = gdriveItems.find((r) => r.resource_id === fileId);
-      if (!file) return;
 
       setFileStatusMap((prev) => ({
         ...prev,
@@ -187,6 +187,7 @@ export function FilePicker() {
         await refreshGDrive();
       } catch (err) {
         console.error("Deindex error:", err);
+        // Reset pending
         setFileStatusMap((prev) => ({
           ...prev,
           [fileId]: {
@@ -196,7 +197,7 @@ export function FilePicker() {
         }));
       }
     },
-    [connection, kbId, gdriveItems, deindexFiles, refreshKB, refreshGDrive]
+    [connection, gdriveItems, deindexFiles, refreshKB, refreshGDrive]
   );
 
   const mergedItems: FileItem[] = gdriveItems.map((item) => {
@@ -206,7 +207,7 @@ export function FilePicker() {
     };
     return {
       ...item,
-      connection_id: connection?.connection_id,
+      connection_id: connection?.connection_id || item.connection_id,
       isPending: localStatus.isPending,
       isIndexed: localStatus.isIndexed,
       status: toIndexStatus(localStatus.isPending, localStatus.isIndexed),

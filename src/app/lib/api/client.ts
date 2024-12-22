@@ -95,6 +95,18 @@ class ApiClient {
 
     if (!response.ok) {
       const errorText = await response.text();
+
+      if (
+        response.status === 400 &&
+        (errorText.toLowerCase().includes("path error") ||
+          errorText.toLowerCase().includes("does not exist"))
+      ) {
+        console.warn(
+          "[ApiClient] 400 path error for non-indexed folder. Returning empty array."
+        );
+        return [];
+      }
+
       console.error(`[ApiClient] API error (${response.status}):`, errorText);
       throw new Error(`API request failed: ${response.statusText}`);
     }

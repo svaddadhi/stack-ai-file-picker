@@ -48,6 +48,28 @@ export function useIndexing(
     [kbId, existingKBSourceIds, setKbId, createKnowledgeBase, syncKnowledgeBase]
   );
 
+  const recursivelyRemoveFolder = useCallback(
+    async (kbId: string, folderPath: string) => {
+      const children = await fetchKBChildren(kbId, folderPath);
+
+      for (const child of children) {
+        let childPath = child.inode_path.path;
+        if (!childPath.startsWith("/")) {
+          childPath = `/${childPath}`;
+        }
+
+        if (child.inode_type === "directory") {
+          await recursivelyRemoveFolder(kbId, childPath);
+        } else {
+          await deleteResourceFromKB(kbId, childPath);
+        }
+      }
+
+      await deleteResourceFromKB(kbId, folderPath);
+    },
+    [fetchKBChildren, deleteResourceFromKB]
+  );
+
   const deindexFiles = useCallback(
     async (file: FileItem) => {
       if (!kbId || !file.connection_id) {
@@ -59,23 +81,23 @@ export function useIndexing(
       if (!path.startsWith("/")) path = `/${path}`;
 
       try {
-        await deleteResourceFromKB(kbId, path);
+        if (file.inode_type === "directory") {
+          await recursivelyRemoveFolder(kbId, path);
+        } else {
+          await deleteResourceFromKB(kbId, path);
+        }
+
         await syncKnowledgeBase(kbId);
 
         const allKB = await fetchKBChildren(kbId, "/");
 
-        const removedIds = allKB
-          .filter((kbItem: any) => {
-            let p = kbItem.inode_path.path;
-            if (!p.startsWith("/")) p = `/${p}`;
-            return p === path || p.startsWith(`${path}/`);
-          })
-          .map((kbItem: any) => kbItem.resource_id);
-
-        let updated = existingKBSourceIds.filter(
-          (id) => !removedIds.includes(id)
+        const stillInKBIds = new Set<string>(
+          allKB.map((kbItem: any) => kbItem.resource_id)
         );
-        updated = updated.filter((id) => id !== file.resource_id);
+
+        const updated = existingKBSourceIds.filter((id) =>
+          stillInKBIds.has(id)
+        );
 
         if (updated.length > 0) {
           await createKnowledgeBase({
@@ -97,6 +119,7 @@ export function useIndexing(
       createKnowledgeBase,
       syncKnowledgeBase,
       fetchKBChildren,
+      recursivelyRemoveFolder,
     ]
   );
 
