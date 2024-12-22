@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { Button } from "@/components/ui/button";
 import { FileIcon, FolderIcon, Loader2 } from "lucide-react";
-import { StatusIndicator } from "./status-indicator";
+import { StatusIndicator } from "./StatusIndicator";
 
 interface FileItemProps {
   id: string;

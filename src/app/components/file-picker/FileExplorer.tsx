@@ -1,6 +1,6 @@
-import { FileList } from "./file-list";
-import { LoadingSkeleton } from "../shared/loading-skeleton";
-import { ErrorMessage } from "../shared/error-message";
+import { FileList } from "./FileList";
+import { LoadingSkeleton } from "../shared/LoadingSkeleton";
+import { ErrorMessage } from "../shared/ErrorMessage";
 import { FileItem } from "@/app/lib/types/file";
 
 interface FileExplorerProps {

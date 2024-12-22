@@ -1,5 +1,5 @@
 import { FileItem as FileItemType } from "@/app/lib/types/file";
-import { FileItem } from "./file-item";
+import { FileItem } from "./FileItem";
 
 interface FileListProps {
   files: FileItemType[];

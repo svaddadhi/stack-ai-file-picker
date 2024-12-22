@@ -10,13 +10,13 @@ import { BreadcrumbNavigation } from "./BreadcrumbNavigation";
 import { ErrorBoundary } from "../shared/ErrorBoundary";
 import { Toolbar } from "./toolbar";
 
-import { useSortFilter } from "@/app/hooks/ui/use-sort-filter";
+import { useSortFilter } from "@/app/hooks/ui/useSortFilter";
 import { useConnection } from "@/app/hooks/api/useConnection";
-import { useResources } from "@/app/hooks/api/use-resources";
+import { useResources } from "@/app/hooks/api/useResources";
 import { useKBChildren } from "@/app/hooks/api/useKnowledgeBase";
-import { useNavigation } from "@/app/hooks/ui/use-navigation";
-import { useFileSelection } from "@/app/hooks/ui/use-file-selection";
-import { useKeyboardSelection } from "@/app/hooks/ui/use-keyboard-selection";
+import { useNavigation } from "@/app/hooks/ui/useNavigation";
+import { useFileSelection } from "@/app/hooks/ui/useFileSelection";
+import { useKeyboardSelection } from "@/app/hooks/ui/useKeyboardSelection";
 import { useIndexing } from "@/app/hooks/api/useIndexing";
 
 import type { FileItem } from "@/app/lib/types/file";
