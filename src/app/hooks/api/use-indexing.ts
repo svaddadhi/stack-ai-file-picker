@@ -7,17 +7,15 @@ export function useIndexing(
   setKbId: (val: string) => void,
   existingKBSourceIds: string[]
 ) {
-  const {
-    createKnowledgeBase,
-    updateKnowledgeBase,
-    syncKnowledgeBase,
-    deleteResourceFromKB,
-  } = useKnowledgeBase(kbId || undefined);
+  const { createKnowledgeBase, deleteResourceFromKB, syncKnowledgeBase } =
+    useKnowledgeBase(kbId || undefined);
 
-  const addResourcesToKB = useCallback(
-    async (connectionId: string, fileIds: string[]) => {
+  const indexFiles = useCallback(
+    async (connectionId: string, files: FileItem[]) => {
+      const fileIds = files.map((f) => f.resource_id);
+
       if (!kbId) {
-        // CREATE a new KB
+        // Create new KB
         const newKB = await createKnowledgeBase({
           connectionId,
           connectionSourceIds: fileIds,
@@ -25,47 +23,59 @@ export function useIndexing(
         });
         const newId = newKB.knowledge_base_id;
         setKbId(newId);
-        return newId;
+        await syncKnowledgeBase(newId);
       } else {
-        // PATCH existing KB
-        const merged = Array.from(
+        // Create a new KB with merged source IDs
+        const allIds = Array.from(
           new Set([...existingKBSourceIds, ...fileIds])
         );
-        await updateKnowledgeBase(kbId, merged);
-        return kbId;
+        await createKnowledgeBase({
+          connectionId,
+          connectionSourceIds: allIds,
+          name: "My Hybrid KB",
+        });
+        await syncKnowledgeBase(kbId);
       }
     },
-    [
-      kbId,
-      setKbId,
-      existingKBSourceIds,
-      createKnowledgeBase,
-      updateKnowledgeBase,
-    ]
-  );
-
-  const indexFiles = useCallback(
-    async (connectionId: string, files: FileItem[]) => {
-      const fileIds = files.map((f) => f.resource_id);
-      const finalKbId = await addResourcesToKB(connectionId, fileIds);
-      await syncKnowledgeBase(finalKbId);
-    },
-    [addResourcesToKB, syncKnowledgeBase]
+    [kbId, createKnowledgeBase, existingKBSourceIds, setKbId, syncKnowledgeBase]
   );
 
   const deindexFiles = useCallback(
     async (file: FileItem) => {
-      if (!kbId) return;
+      if (!kbId || !file.connection_id) return;
 
       try {
+        // Delete the file from KB
         await deleteResourceFromKB(kbId, file.inode_path.path);
+
+        // Remove the deindexed file ID from existingKBSourceIds
+        const updatedSourceIds = existingKBSourceIds.filter(
+          (id) => id !== file.resource_id
+        );
+
+        // Create a new KB with the updated source IDs
+        // This ensures we don't have lingering state from previous KBs
+        if (updatedSourceIds.length > 0) {
+          await createKnowledgeBase({
+            connectionId: file.connection_id,
+            connectionSourceIds: updatedSourceIds,
+            name: "My Hybrid KB",
+          });
+        }
+
         await syncKnowledgeBase(kbId);
       } catch (err) {
         console.error("Failed to deindex file:", err);
         throw err;
       }
     },
-    [kbId, deleteResourceFromKB, syncKnowledgeBase]
+    [
+      kbId,
+      deleteResourceFromKB,
+      syncKnowledgeBase,
+      createKnowledgeBase,
+      existingKBSourceIds,
+    ]
   );
 
   return { indexFiles, deindexFiles };

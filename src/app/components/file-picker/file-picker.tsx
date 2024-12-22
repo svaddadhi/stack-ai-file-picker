@@ -210,9 +210,9 @@ export function FilePicker() {
     };
     return {
       ...item,
+      connection_id: connection?.connection_id, // Add this
       isPending: localStatus.isPending,
       isIndexed: localStatus.isIndexed,
-
       status: localStatus.isPending
         ? "pending"
         : localStatus.isIndexed

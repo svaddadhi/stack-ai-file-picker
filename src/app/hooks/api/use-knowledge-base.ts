@@ -50,17 +50,6 @@ export function useKnowledgeBase(kbId?: string) {
     return response;
   };
 
-  const updateKnowledgeBase = async (
-    kbId: string,
-    connectionSourceIds: string[]
-  ) => {
-    const patchUrl = `${endpoints.knowledgeBase.create}/${kbId}`;
-    return apiClient.fetchWithAuth(patchUrl, {
-      method: "PATCH",
-      body: JSON.stringify({ connection_source_ids: connectionSourceIds }),
-    });
-  };
-
   const deleteResourceFromKB = async (kbId: string, path: string) => {
     const url = `${endpoints.knowledgeBase.resources(
       kbId
@@ -79,7 +68,6 @@ export function useKnowledgeBase(kbId?: string) {
 
   return {
     createKnowledgeBase,
-    updateKnowledgeBase,
     deleteResourceFromKB,
     syncKnowledgeBase,
     orgId,
