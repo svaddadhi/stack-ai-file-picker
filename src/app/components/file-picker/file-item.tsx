@@ -1,5 +1,4 @@
 import { memo } from "react";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { FileIcon, FolderIcon, Loader2 } from "lucide-react";
 import { StatusIndicator } from "./status-indicator";
@@ -50,16 +49,6 @@ export const FileItem = memo(function FileItem({
     onSelect(e);
   };
 
-  const handleCheckboxChange = () => {
-    const syntheticEvent = new MouseEvent("click", {
-      bubbles: true,
-      cancelable: true,
-      buttons: 1,
-      ctrlKey: true,
-    });
-    onSelect(syntheticEvent as unknown as React.MouseEvent);
-  };
-
   return (
     <div
       className={`flex items-center p-2 rounded-lg gap-3 hover:bg-gray-100 dark:hover:bg-gray-800 ${
@@ -67,8 +56,7 @@ export const FileItem = memo(function FileItem({
       }`}
       onDoubleClick={handleDoubleClick}
     >
-      <Checkbox checked={isSelected} onCheckedChange={handleCheckboxChange} />
-
+      {/* Removed the checkbox here; no checkbox is rendered. */}
       <Icon className="h-4 w-4 text-gray-500" />
 
       <span
