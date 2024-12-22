@@ -23,10 +23,8 @@ interface FileItemProps {
 }
 
 export const FileItem = memo(function FileItem({
-  id,
   name,
   type,
-  path,
   isSelected,
   isIndexed,
   isPending,

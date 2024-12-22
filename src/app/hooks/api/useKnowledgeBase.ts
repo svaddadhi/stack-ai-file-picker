@@ -11,7 +11,7 @@ interface CreateKBParams {
   description?: string;
 }
 
-export function useKnowledgeBase(kbId?: string) {
+export function useKnowledgeBase() {
   const { data: orgData } = useSWR(endpoints.organization.current, (url) =>
     apiClient.fetchWithAuth(url)
   );

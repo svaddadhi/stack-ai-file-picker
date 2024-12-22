@@ -13,7 +13,6 @@ interface UseKeyboardSelectionProps {
 export function useKeyboardSelection({
   files,
   selectedFiles,
-  onToggleSelection,
   onSelectRange,
   onSelectAll,
   onClearSelection,

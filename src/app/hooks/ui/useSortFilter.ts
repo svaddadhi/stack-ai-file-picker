@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback } from "react";
 import type { FileItem } from "@/app/lib/types/file";
 
 type SortType = "name" | "date" | null;
